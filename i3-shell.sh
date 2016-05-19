@@ -1,6 +1,5 @@
 #!/bin/bash
 # i3 thread: https://faq.i3wm.org/question/150/how-to-launch-a-terminal-from-here/?answer=152#post-id-152
-# original author: https://gist.github.com/viking/5851049
 
 CMD="xterm -bg black -fg grey"
 CWD=''
@@ -31,7 +30,14 @@ case ${CURRENT_CMD} in
 		SSH_ADDR=$(netstat -tnpa 2> /dev/null | grep "ESTABLISHED ${PID}/ssh" | awk '{print $5}' | cut -d: -f1)
 		# assuming "Host" is the first line above "HostName" in your ssh config
 		SSH_HOSTNAME=$(grep -B1 ${SSH_ADDR} ${HOME}/.ssh/config | head -1 | cut -d\  -f2)
-		CMD="${CMD} -e ssh ${SSH_HOSTNAME}"
+		if [ -n "SSH_HOSTNAME" ]; then
+			# no ssh config entry found
+			SSH_USER=$(cat /proc/${PID}/cmdline | sed -e 's/^ssh\(.*\)@.*$/\1/')
+			# crawl for more ssh-options here if necessary
+			CMD="${CMD} -e ssh ${SSH_USER}@${SSH_ADDR}"
+		else
+			CMD="${CMD} -e ssh ${SSH_HOSTNAME}"
+		fi
 		;;
 	*)
 		# do nuttin
